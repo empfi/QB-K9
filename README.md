@@ -1,5 +1,6 @@
 🚨 **QB-Core Police K9 Script** 🐶  
 
+💾 All interactions are made with QB-Target!
 Unleash the ultimate K9 experience for your FiveM server! This QB-Core based script brings a fully interactive police dog system to your roleplay. Officers with the right job and rank (configurable, e.g., `3+`) can collect a loyal K9 from a designated station 📍 and command it with ease.  
 
 **Features**:  
