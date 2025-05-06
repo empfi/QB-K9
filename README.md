@@ -18,4 +18,5 @@ Perfect for police RP servers looking to add a dynamic and immersive K9 unit! Fu
 - QB-Core  
 - QB-Target
 
+### ❗Have Fun with it! Feel free to edit it and republish it. Just tag me.
 *Version*: 1.0.0  
