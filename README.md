@@ -20,5 +20,10 @@ Perfect for police RP servers looking to add a dynamic and immersive K9 unit! Fu
 - QB-Core  
 - QB-Target
 
+- *Using OX_Lib:*
+- QB-Core  
+- ox_lib
+- ox_target
+
 ### ❗Have Fun with it! Feel free to edit it and republish it. Just tag me.
-*Latest Version*: 1.1.0  
+*Latest Version*: 1.1.1
