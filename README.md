@@ -12,7 +12,8 @@ Unleash the ultimate K9 experience for your FiveM server! This QB-Core based scr
 - 🏠 Optional shelter system: Dogs walk to/from a shelter for immersive spawning/despawning.  
 - 🎯 QB-Target integration for seamless interactions (bark, attack, wait).  
 - 💀 Death detection ensures the K9 is removed if critically injured, with a notification to grab a new one.  
-
+- 🚘Car detection ensures, that your dog doesn´t dies, while you are in a Car.
+- 
 Perfect for police RP servers looking to add a dynamic and immersive K9 unit! Fully configurable via `config.lua` to match your server’s needs. Try it now and let your officers patrol with their four-legged partner! 🐾  
 
 *Dependencies*:
@@ -20,4 +21,4 @@ Perfect for police RP servers looking to add a dynamic and immersive K9 unit! Fu
 - QB-Target
 
 ### ❗Have Fun with it! Feel free to edit it and republish it. Just tag me.
-*Version*: 1.0.0  
+*Latest Version*: 1.1.0  
