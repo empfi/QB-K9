@@ -8,6 +8,7 @@ local attackQueue = {}
 local lastDogPos = nil
 local stuckTimer = 0
 local lastTeleportTime = 0
+local wasInVehicle = false
 
 -- Create Blip for K9 Station
 Citizen.CreateThread(function()
@@ -123,9 +124,7 @@ AddEventHandler('qb-k9:client:collectK9', function()
     else
         local offset = GetOffsetFromEntityInWorldCoords(playerPed, -2.0, 0.0, 0.0)
         local _, groundZ = GetGroundZFor_3dCoord(offset.x, offset.y, offset.z + 1.0, false)
-        spawnPos = vector3(offset.x, offset
-
-.y, groundZ)
+        spawnPos = vector3(offset.x, offset.y, groundZ)
     end
 
     dogPed = CreatePed(4, model, spawnPos.x, spawnPos.y, spawnPos.z, GetEntityHeading(playerPed), true, false)
@@ -140,7 +139,6 @@ AddEventHandler('qb-k9:client:collectK9', function()
     SetPedHearingRange(dogPed, 0.0)
     SetBlockingOfNonTemporaryEvents(dogPed, true)
 
-    
     -- Add networked flag to ensure entity state syncs properly
     NetworkRegisterEntityAsNetworked(dogPed)
     local netId = NetworkGetNetworkIdFromEntity(dogPed)
@@ -269,9 +267,7 @@ AddEventHandler('gameEventTriggered', function(name, args)
            and DoesEntityExist(attacker) 
            and attacker ~= PlayerPedId() 
            and attacker ~= dogPed then
-
             QBCore.Functions.Notify('K9 wird angegriffen – verteidigt sich!', 'error')
-            -- füge Angreifer zur Attack‑Queue hinzu
             table.insert(attackQueue, attacker)
             if not isAttacking then
                 ProcessAttackQueue()
@@ -294,6 +290,56 @@ Citizen.CreateThread(function()
                 ProcessAttackQueue()
             end
         end
+    end
+end)
+
+-- Monitor Vehicle Status for K9 Despawn/Respawn
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(500)
+        local playerPed = PlayerPedId()
+        local isInVehicle = IsPedInAnyVehicle(playerPed, false)
+
+        if isInVehicle and dogPed and DoesEntityExist(dogPed) and not isReturning then
+            -- Despawn K9 while in any vehicle
+            ClearPedTasks(dogPed)
+            DeleteEntity(dogPed)
+            dogPed = nil
+            QBCore.Functions.Notify('K9 stored while in vehicle.', 'success')
+        elseif not isInVehicle and not dogPed and wasInVehicle and not isReturning then
+            -- Respawn K9 after exiting vehicle
+            local model = GetHashKey(Config.DogModel)
+            RequestModel(model)
+            while not HasModelLoaded(model) do
+                Citizen.Wait(0)
+            end
+
+            local offset = GetOffsetFromEntityInWorldCoords(playerPed, -2.0, 0.0, 0.0)
+            local _, groundZ = GetGroundZFor_3dCoord(offset.x, offset.y, offset.z + 1.0, false)
+            local spawnPos = vector3(offset.x, offset.y, groundZ)
+
+            dogPed = CreatePed(4, model, spawnPos.x, spawnPos.y, spawnPos.z, GetEntityHeading(playerPed), true, false)
+            SetEntityAsMissionEntity(dogPed, true, true)
+            SetPedFleeAttributes(dogPed, 0, false)
+            SetPedCombatAttributes(dogPed, 46, true)
+            SetPedRelationshipGroupHash(dogPed, GetHashKey('K9'))
+            SetRelationshipBetweenGroups(5, GetHashKey('K9'), GetHashKey('PLAYER'))
+            SetEntityMaxHealth(dogPed, Config.DogMaxHealth)
+            SetEntityHealth(dogPed, Config.DogMaxHealth)
+            SetEntityInvincible(dogPed, false)
+            SetPedHearingRange(dogPed, 0.0)
+            SetBlockingOfNonTemporaryEvents(dogPed, true)
+
+            NetworkRegisterEntityAsNetworked(dogPed)
+            local netId = NetworkGetNetworkIdFromEntity(dogPed)
+            SetNetworkIdCanMigrate(netId, true)
+            SetNetworkIdExistsOnAllMachines(netId, true)
+
+            QBCore.Functions.Notify('K9 retrieved after exiting vehicle!', 'success')
+            FollowPlayer()
+        end
+
+        wasInVehicle = isInVehicle
     end
 end)
 
@@ -459,23 +505,17 @@ end)
 -- K9 Death Check - Main Thread
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(500) -- Check every half second
-        
+        Citizen.Wait(500)
         if dogPed then
             if DoesEntityExist(dogPed) then
                 local hp = GetEntityHealth(dogPed)
-                
-                -- Check multiple conditions for death
                 if hp <= Config.DeathHealthThreshold or IsEntityDead(dogPed) then
                     QBCore.Functions.Notify('Your K9 has died or been critically injured. You need to get a new one.', 'error')
-                    
-                    -- Failsafe cleanup
                     if DoesEntityExist(dogPed) then
-                        SetEntityHealth(dogPed, 0) -- Ensure it's marked as dead
-                        Citizen.Wait(1000) -- Wait a bit before deletion
+                        SetEntityHealth(dogPed, 0)
+                        Citizen.Wait(1000)
                         DeleteEntity(dogPed)
                     end
-                    
                     dogPed = nil
                     isWaiting = false
                     isAttacking = false
@@ -486,7 +526,6 @@ Citizen.CreateThread(function()
                     stuckTimer = 0
                 end
             else
-                -- Entity doesn't exist anymore
                 dogPed = nil
                 isWaiting = false
                 isAttacking = false
@@ -497,7 +536,5 @@ Citizen.CreateThread(function()
                 stuckTimer = 0
             end
         end
-        
-        -- This thread never terminates, ensuring checks resume when a new dog is spawned
     end
 end)
